@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title></title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="style.css" rel="stylesheet">
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+
+</head>
+
+<body>
+    <div class='container'>
+        <div class="tools">
+            <label for 'color'>color</label>
+            <div> <select id='colors'>
+                <option value='black'>black</option>
+
+                <option value='red'>red</option>
+                <option value='blue'>blue</option>
+                <option value='green'>green</option>
+                <option value='purple'>purple</option>
+                 <option value='yellow'>yellow</option>
+                <option value='white'>white</option>
+                <option value='orange'>orange</option>
+            </select></div>
+            <label for 'stroke-size'>brush-size</label>
+            <div> <select id='stroke-size'>
+                <option value='1'>1</option>
+                <option value='2'>2</option>
+                <option value='3'>3</option>
+                <option value='4'>4</option>
+                <option value='5'>5</option>   
+                <option value='6'>6</option>
+                <option value='8'>8</option>
+                <option value='10'>10</option>
+                <option value='15'>15</option>    
+                <option value='20'>20</option>
+                  <option value='30'>30</option>           
+    
+            </select>
+            </div>
+            <button id='erase'>clear</button>
+            <button id='rub'>erase</button>
+        </div>
+        <div class="canvas">
+            <svg id="drawing_area">
+
+            </svg>
+        </div>
+    </div>
+
+</body>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        let colors = document.getElementById('colors');
+        console.log('colors:', colors)
+
+
+        colors.addEventListener('change', function() {
+            this.style.backgroundColor = this.value;
+            color = this.value;
+            pressed = false;
+        });
+
+
+
+        const svg = d3.select('#drawing_area');
+        let pressed = false;
+        let points = [];
+        var color = 'black';
+        let lines = [];
+        var touch = false;
+
+        let join = false;
+
+        document.querySelector('#erase').onclick = () => {
+            for (let i = 0; i < points.length; i++) {
+                points[i].remove();
+                if (i < lines.length) {
+                    lines[i].remove()
+                }
+            };
+
+        };
+        window.addEventListener('mousemove', () => {
+            let svg_start = svg.node().getBoundingClientRect();
+            let mouse_y = event.clientY;
+            let mouse_x = event.clientX
+
+            if (mouse_y < svg_start['y'] | mouse_y > svg_start['y'] + svg_start['height'] | mouse_x < svg_start['x'] | mouse_x > svg_start['x'] + svg_start['width']) {
+                join = false;
+                pressed = false;
+
+            };
+
+        })
+
+
+        svg.on('mousedown', function() {
+            pressed = true;
+            join = false;
+            let [x, y] = d3.mouse(this);
+            draw(x, y, join, color);
+        });
+        svg.on('mouseup', () => {
+            join = false;
+            pressed = false;
+        });
+
+        svg.on('touchstart', function() {
+            console.log('touch event ')
+            pressed = true;
+            touch = true;
+            join = false;
+            let d = d3.touches(this);
+            let z = d[0]
+
+            console.log('z', z);
+
+            let [x, y] = z;
+
+            draw(x, y, join, color);
+        });
+
+
+
+
+
+        function start_drawing() {
+
+            if (touch) {
+                join = true;
+                let d = d3.touches(this);
+                let [x, y] = d[0];
+                draw(x, y, join, color);
+
+
+            };
+            if (pressed) {
+                join = true;
+                let [x, y] = d3.mouse(this);
+
+
+                draw(x, y, join, color);
+
+            };
+
+
+
+        }
+        document.querySelector('#rub').addEventListener('click', () => {
+            color = svg.style('background-color');
+            console.log(svg.style('background-color'), color);
+        });
+
+
+
+        function draw(x, y, join, color) {
+
+            let cur_color = color
+            let brush_size = document.querySelector("#stroke-size").value;
+
+            if (join) {
+                let prev = points[points.length - 1];
+                let line = svg.append('line').attr('x1', prev.attr('cx'))
+                    .attr('y1', prev.attr('cy'))
+                    .attr('x2', x)
+                    .attr('y2', y)
+                    .style('stroke', cur_color)
+                    .style('stroke-width', brush_size * 2);
+                lines.push(line);
+            }
+
+
+            let point = svg.append('circle')
+                .attr('cx', x)
+                .attr('cy', y)
+                .attr('r', brush_size)
+                .style('fill', cur_color);
+            points.push(point);
+
+
+        }
+        svg.on('touchmove', start_drawing);
+
+
+        svg.on('mousemove', start_drawing);
+    });
+</script>
+
+</html>
